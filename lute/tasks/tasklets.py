@@ -334,17 +334,19 @@ def setup_dimple_uglymol(
 
 # ====== BEGIN PENDING ALEX SCRIPTS ======
 def tjump_analysis_summary(
-    output_h5: str, intermediate_figure_display_name: str, summary_figure_display_name: str
+    output_h5: str,
+    intermediate_figure_display_name: str,
+    summary_figure_display_name: str,
 ) -> Tuple[Dict[str, str], Optional[ElogSummaryPlots]]:
     """Process T-Jump results and create summary plots for elog display.
-    
+
     This tasklet reads the h5 results from a T-Jump analysis and creates
     matplotlib plots for display in the elog.
-    
+
     Args:
         output_h5 (str): Path to the output h5 file containing scaled 1D data and filter masks.
         figure_display_name (str): Display name/path for the summary plot in elog.
-        
+
     Returns:
         Tuple containing:
             - Dict[str, str]: Summary statistics as key-value pairs for elog
@@ -353,10 +355,11 @@ def tjump_analysis_summary(
 
     import h5py
     import panel as pn
+
     # import holoviews as hv
     # hv.extension('bokeh')
     pn.extension()
-    
+
     summary_stats_col_name: str = "Qpeak"
     event_col_name: str = "event"
     evr_col_name: str = "evr"
@@ -365,10 +368,15 @@ def tjump_analysis_summary(
 
     # Retrieve all filter mask keys from the h5 file
     filter_mask_keys = []
-    with h5py.File(output_h5, 'r') as f:
+    with h5py.File(output_h5, "r") as f:
         for key in f.keys():
-            if key not in [summary_stats_col_name, event_col_name, evr_col_name, 
-                           intensity_col_name, q_array_col_name]:
+            if key not in [
+                summary_stats_col_name,
+                event_col_name,
+                evr_col_name,
+                intensity_col_name,
+                q_array_col_name,
+            ]:
                 if isinstance(f[key], h5py.Dataset):
                     filter_mask_keys.append(key)
 
@@ -384,7 +392,7 @@ def tjump_analysis_summary(
             logger.warning(f"PNG file {png_file} not found")
     tabs = pn.Tabs(*tabs_list)
     intermediate_plots = ElogSummaryPlots(intermediate_figure_display_name, tabs)
-    
+
     # Creat another plot for the summary. Note that png loading is just a temporary
     # solution for now. Bokeh interactive plot will be implemented later.
     summary_png_file = f"{output_dir}/summary.png"
@@ -396,4 +404,6 @@ def tjump_analysis_summary(
     summary_plots = ElogSummaryPlots(summary_figure_display_name, summary_plot)
 
     return intermediate_plots, summary_plots
+
+
 # ====== END PENDING ALEX SCRIPTS ======
