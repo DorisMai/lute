@@ -8,6 +8,7 @@ from .sfx_index import *
 from .sfx_merge import *
 from .sfx_solve import *
 from .smd import *
+from .tjump import *
 from .tests import *
 from .mpi_tests import *
 from .geometry import *

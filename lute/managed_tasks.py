@@ -11,6 +11,7 @@ from lute.tasks.tasklets import (
     compare_hkl_fom_summary,
     indexamajig_summary_indexing_rate,
     setup_dimple_uglymol,
+    tjump_analysis_summary,
 )
 
 # Tests
@@ -149,3 +150,16 @@ SHELXCRunner.shell_source("/sdf/group/lcls/ds/tools/ccp4-8.0/bin/ccp4.setup-sh")
 
 PeakFinderPsocake: Executor = Executor("FindPeaksPsocake")
 """Performs Bragg peak finding using psocake - *DEPRECATED*."""
+
+# T-Jump Solvent Scattering Analysis
+TJumpAnalyzer: Executor = Executor("TJump")
+# ====== BEGIN PENDING ALEX SCRIPTS ======
+# TJump.shell_source("/path/to/your/environment/setup.sh")
+# ====== BEGIN PENDING ALEX SCRIPTS ======
+TJumpAnalyzer.add_tasklet(
+    tjump_analysis_summary,
+    ["{{ output_dir }}/{{ output_h5 }}", "filtering_intermediates", "summary_scatterplot_violinplot"],
+    when="after",
+    set_result=False,
+    set_summary=True,
+)
