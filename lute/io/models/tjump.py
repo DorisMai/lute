@@ -28,9 +28,15 @@ class TJumpParameters(ThirdPartyParameters):
         result_from_params: str = ""
 
     # ====== BEGIN PENDING ALEX SCRIPTS ======
-    executable: str = Field(
-        "/path/to/tjump_script.py",
+    # executable: str = Field(
+    #     "/path/to/tjump_script.py",
+    #     description="Path to the TJump processing script",
+    # )
+
+    executable: str = Field("python", description="Python executable.", flag_type="")
+    python_script: str = Field(
         description="Path to the TJump processing script",
+        flag_type="",
     )
 
     # Input parameters, auto-retrieve from previous smalldata result if not supplied
@@ -40,6 +46,19 @@ class TJumpParameters(ThirdPartyParameters):
         description="Path to input smalldata h5 file that contains 1D Azimuthal Integration data",
         flag_type="--",
         rename_param="input",
+    )
+
+    exp: str = Field(
+        "",
+        description="LCLS experiment identifier",
+        flag_type="--",
+        rename_param="exp",
+    )
+    run: int = Field(
+        -1,
+        description="LCLS run number",
+        flag_type="--",
+        rename_param="run",
     )
 
     # Output parameters
@@ -80,21 +99,25 @@ class TJumpParameters(ThirdPartyParameters):
     # )
 
     # ====== END PENDING ALEX SCRIPTS ======
-    @validator("executable")
-    def validate_executable_exists(cls, v):
-        """Validate that the executable exists."""
-        import os
+    @validator("exp")
+    def validate_exp(cls, exp: str, values: Dict[str, Any]):
+        """Validate that the experiment identifier is a valid LCLS experiment identifier."""
+        if exp == "":
+            exp = values["lute_config"].experiment
+        return exp
 
-        if not os.path.exists(v):
-            raise ValueError(f"Executable not found: {v}")
-        return v
+    @validator("run")
+    def validate_run(cls, run: int, values: Dict[str, Any]):
+        """Validate that the run number is a valid LCLS run number."""
+        if run == -1:
+            run = int(values["lute_config"].run)
+        return run
 
     @validator("output_dir")
     def validate_output_dir(cls, output_dir: str, values: Dict[str, Any]):
         """Create output directory if it doesn't exist."""
         if output_dir == "":
             exp: str = values["lute_config"].experiment
-            run: int = int(values["lute_config"].run)
             hutch: str = exp[:3]
             output_dir = f"/sdf/data/lcls/ds/{hutch}/{exp}/stats/summary/TJump"
         import os
@@ -108,7 +131,8 @@ class TJumpParameters(ThirdPartyParameters):
     def validate_output_h5(cls, output_h5: str, values: Dict[str, Any]):
         # if not supplied, create a default name based on the input h5 file
         if output_h5 == "":
-            output_h5 = "scaled_and_processed.h5"
+            run: int = int(values["lute_config"].run)
+            output_h5 = f"run{run:04d}_sd2qwp1.hdf5"
         return output_h5
 
     # ====== END PENDING ALEX SCRIPTS ======

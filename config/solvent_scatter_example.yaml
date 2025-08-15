@@ -2,8 +2,8 @@
 ---
 title: "T-Jump Analysis Configuration"
 experiment: "{{ $EXPERIMENT }}"
-#run: "{{ $RUN_NUM }}"
-date: "2025/07/29"
+run: "{{ $RUN_NUM }}"
+date: "2025/08/15"
 lute_version: 0.1      # Do not be change unless need to force older version
 task_timeout: 6000
 work_dir: ""
@@ -11,14 +11,14 @@ work_dir: ""
 ---
 TJump:
   # Path to your custom processing script
-  executable: "/path/to/your/tjump_script.py"
+  python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/tjump_LUTE/sd2qwp1.py"
   
   # Input from previous smalldata task (leave empty to auto-retrieve from SubmitSMD)
-  input_h5: ""
+  input_h5: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/hdf5/smalldata/{{ $EXPERIMENT }}_Run0146.h5"
   
   # Output directory for results, default to /sdf/data/lcls/ds/{hutch}/{exp}/stats/summary/TJump
-  output_dir: ""
+  output_dir: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/stats/summary/TJump/doris_test"
   
   # Output h5 file name, default to scaled_and_processed.h5
-  output_h5: ""
+  output_h5: "run0146_sd2qwp1.hdf5"
 ... 
