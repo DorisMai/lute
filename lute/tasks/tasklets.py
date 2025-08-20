@@ -336,7 +336,7 @@ def setup_dimple_uglymol(
 def tjump_analysis_summary(
     output_dir: str,
     run: int
-) -> Tuple[Any, ElogSummaryPlots]:
+) -> ElogSummaryPlots:
     """Process T-Jump results and create summary plots for elog display.
 
     This tasklet reads the h5 results from a T-Jump analysis and creates
@@ -387,5 +387,6 @@ def tjump_analysis_summary(
         summary_folder_name = output_dir
     logger.info(f"Summary folder name in stats/summary/: {summary_folder_name}")
     combined_plots = ElogSummaryPlots(summary_folder_name, combined_layout)
-    return None, combined_plots
+    return combined_plots
+    # return None, combined_plots
 # ====== END PENDING ALEX SCRIPTS ======
