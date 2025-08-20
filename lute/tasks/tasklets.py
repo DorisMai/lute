@@ -333,17 +333,14 @@ def setup_dimple_uglymol(
 
 
 # ====== BEGIN PENDING ALEX SCRIPTS ======
-def tjump_analysis_summary(
-    output_dir: str,
-    run: int
-) -> ElogSummaryPlots:
+def tjump_analysis_summary(output_dir: str, run: int) -> ElogSummaryPlots:
     """Process T-Jump results and create summary plots for elog display.
 
     This tasklet loads the figures generated from T-Jump analysis and creates
     matplotlib plots for display in the elog. It will displate the intermediate
-    plots (as tabs) and the summary plot side by side. Intermediate figure names 
-    are currently hard-coded because the naming is not consistent and not fully 
-    contained in the output_h5 file. Summary plot is hard-coded to be 
+    plots (as tabs) and the summary plot side by side. Intermediate figure names
+    are currently hard-coded because the naming is not consistent and not fully
+    contained in the output_h5 file. Summary plot is hard-coded to be
     "water-peak-vs-laser-status.png" which is fixed in the T-Jump analysis script.
 
     Args:
@@ -356,7 +353,7 @@ def tjump_analysis_summary(
     import panel as pn
 
     pn.extension()
-    
+
     # The current visual display is not great...but that's the best Doris can do for now.
     col_widths = [700, 900]
 
@@ -391,7 +388,7 @@ def tjump_analysis_summary(
     else:
         logger.warning(f"Summary PNG file {summary_png_file} not found")
         summary_plot = pn.pane.Markdown("Summary plot not found")
-    
+
     # Load intermediate and summary plots side by side, note that ElogSummaryPlots
     # expects the name to be a relative path within .../stats/summary/
     combined_layout = pn.Row(intermediate_tabs, summary_plot)
@@ -402,4 +399,6 @@ def tjump_analysis_summary(
     logger.info(f"Summary folder name in stats/summary/: {summary_folder_name}")
     combined_plots = ElogSummaryPlots(summary_folder_name, combined_layout)
     return combined_plots
+
+
 # ====== END PENDING ALEX SCRIPTS ======
