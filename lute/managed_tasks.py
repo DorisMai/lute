@@ -158,10 +158,7 @@ TJumpAnalyzer: Executor = Executor("TJump")
 # ====== BEGIN PENDING ALEX SCRIPTS ======
 TJumpAnalyzer.add_tasklet(
     tjump_analysis_summary,
-    [
-        "{{ output_dir }}",
-        "{{ lute_config.run }}"
-    ],
+    ["{{ output_dir }}", "{{ lute_config.run }}"],
     when="after",
     set_result=False,
     set_summary=True,
