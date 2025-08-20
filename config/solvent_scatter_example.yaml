@@ -10,15 +10,15 @@ work_dir: ""
 ...
 ---
 TJump:
-  # Path to your custom processing script
+  # REQUIRED: Path to your custom processing script
   python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/tjump_LUTE/sd2qwp1.py"
   
-  # Input from previous smalldata task (leave empty to auto-retrieve from SubmitSMD)
-  input_h5: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/hdf5/smalldata/{{ $EXPERIMENT }}_Run0146.h5"
+  # [REQUIRED FOR NOW]: Input from previous smalldata task
+  input_h5: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/hdf5/smalldata/{{ $EXPERIMENT }}_Run{{ $RUN_NUM:04d }}.h5"
   
-  # Output directory for results, default to /sdf/data/lcls/ds/{hutch}/{exp}/stats/summary/TJump
-  output_dir: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/stats/summary/TJump/doris_test"
+  # OPTIONAL: Output directory for results, default to the following
+  # output_dir: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/stats/summary/TJump/{{ $RUN_NUM:04d }}"
   
-  # Output h5 file name, default to scaled_and_processed.h5
-  output_h5: "run0146_sd2qwp1.hdf5"
+  # OPTIONAL: Output h5 file name, default to the following
+  # output_h5: "run{{ $RUN_NUM:04d }}_sd2qwp1.hdf5"
 ... 

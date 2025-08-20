@@ -159,10 +159,8 @@ TJumpAnalyzer: Executor = Executor("TJump")
 TJumpAnalyzer.add_tasklet(
     tjump_analysis_summary,
     [
-        "{{ output_dir }}/{{ output_h5 }}",
-        "{{ lute_config.run }}",
-        "filtering_intermediates",
-        "summary_scatterplot_violinplot",
+        "{{ output_dir }}",
+        "{{ lute_config.run }}"
     ],
     when="after",
     set_result=False,

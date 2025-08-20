@@ -118,8 +118,9 @@ class TJumpParameters(ThirdPartyParameters):
         """Create output directory if it doesn't exist."""
         if output_dir == "":
             exp: str = values["lute_config"].experiment
+            run: int = int(values["lute_config"].run)
             hutch: str = exp[:3]
-            output_dir = f"/sdf/data/lcls/ds/{hutch}/{exp}/stats/summary/TJump"
+            output_dir = f"/sdf/data/lcls/ds/{hutch}/{exp}/stats/summary/TJump/{run:04d}"
         import os
 
         if not os.path.exists(output_dir):
