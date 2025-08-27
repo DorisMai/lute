@@ -78,7 +78,13 @@ class TJumpParameters(ThirdPartyParameters):
         flag_type="--",
         rename_param="output_h5",
     )
-
+    peakfit: str = Field(
+        "",
+        description="Peak fitting method: 'simple' or 'spline' or 'two_peak_fit' (default=simple). "
+        "Not applicable to sd2qwp1.py script.",
+        flag_type="--",
+        rename_param="peakfit",
+    )
     # # Other potential parameters
     # zscore_threshold: Optional[float] = Field(
     #     2,
@@ -137,6 +143,16 @@ class TJumpParameters(ThirdPartyParameters):
             run: int = int(values["lute_config"].run)
             output_h5 = f"run{run:04d}_sd2qwp1.hdf5"
         return output_h5
+
+    @validator("peakfit")
+    def validate_peakfit(cls, peakfit: str, values: Dict[str, Any]):
+        """Validate that the peak fitting method is valid."""
+        if not values["python_script"].endswith("sd2qwp1.py"):
+            if peakfit == "": 
+                peakfit = "simple"
+            elif peakfit not in ["simple", "spline", "two_peak_fit"]:
+                raise ValueError(f"Invalid peak fitting method: {peakfit}")
+        return peakfit
 
     # ====== END PENDING ALEX SCRIPTS ======
 

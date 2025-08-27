@@ -11,7 +11,8 @@ work_dir: ""
 ---
 TJump:
   # REQUIRED: Path to your custom processing script
-  python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/tjump_LUTE/sd2qwp1.py"
+  # python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/tjump_LUTE/sd2qwp1.py"
+  python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/tjump_LUTE/smalldata_to_Tval_multimethod.py"
   
   # OPTIONAL: Input from previous smalldata task. If not provided, LUTE validator and/or the 
   # TJump script defaults to the following
@@ -22,4 +23,8 @@ TJump:
   
   # OPTIONAL: Output h5 file name, default to the following
   # output_h5: "run{{ $RUN_NUM:04d }}_sd2qwp1.hdf5"
+
+  # OPTIONAL: Peak fitting method: 'simple' or 'spline' or 'two_peak_fit' (default=simple). 
+  # Not applicable to sd2qwp1.py script.
+  # peakfit: "spline"
 ... 
