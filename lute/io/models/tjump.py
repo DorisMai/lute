@@ -148,7 +148,7 @@ class TJumpParameters(ThirdPartyParameters):
     def validate_peakfit(cls, peakfit: str, values: Dict[str, Any]):
         """Validate that the peak fitting method is valid."""
         if not values["python_script"].endswith("sd2qwp1.py"):
-            if peakfit == "": 
+            if peakfit == "":
                 peakfit = "simple"
             elif peakfit not in ["simple", "spline", "two_peak_fit"]:
                 raise ValueError(f"Invalid peak fitting method: {peakfit}")
