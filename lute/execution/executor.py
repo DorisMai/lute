@@ -63,7 +63,9 @@ from lute.tasks.dataclasses import (
     TaskResult,
     TaskStatus,
     ElogSummaryPlots,
+    TaskParametersDBReference,
 )
+from lute.io.parameters import RowIds, construct_task_parameters
 from lute.io.models.base import (
     TaskParameters,
     TemplateParameters,
@@ -71,7 +73,11 @@ from lute.io.models.base import (
     TemplateConfig,  # noqa: F401
     ThirdPartyParameters,
 )  # NOTE: All imports required for unpickling!
-from lute.io.db import record_analysis_db
+from lute.io.db import (
+    record_analysis_db,
+    update_analysis_db,
+    get_task_parameters_defn_and_params,
+)
 from lute.io.elog import post_elog_run_status, post_elog_run_table
 
 if __debug__:
@@ -180,22 +186,23 @@ class BaseExecutor(ABC):
         task_parameters: Optional[TaskParameters] = None
         task_env: Dict[str, str] = os.environ.copy()
         self._communicators: List[Communicator] = communicators
-        communicator_desc: List[str] = []
-        for comm in self._communicators:
-            comm.stage_communicator()
-            communicator_desc.append(str(comm))
 
         self._analysis_desc: DescribedAnalysis = DescribedAnalysis(
             task_result=result,
             task_parameters=task_parameters,
             task_env=task_env,
+            executor_name=self.__class__.__name__,
             poll_interval=poll_interval,
-            communicator_desc=communicator_desc,
+            communicator_desc=[""],  # Will update in _pre_task, see method for why
         )
         self._tasklets: TaskletDict = {"before": None, "after": None}
         self._shell_source_script: Optional[str] = None
         self._task_timeout: Optional[int] = None
         self._task_time0: Optional[float] = None
+        self._row_ids: Optional[RowIds] = None
+        self._delayed_update_env_args: Optional[
+            Tuple[Union[Dict[str, str], Callable[[], Dict[str, str]]], str]
+        ] = None
 
     def add_tasklet(
         self,
@@ -428,9 +435,15 @@ class BaseExecutor(ABC):
                 "prepend" is the default option. If PATH is not present in the
                 current environment, the new PATH is used without modification.
         """
+        self._delayed_update_env_args = (env, update_path)
+
+    def _update_environment(
+        self,
+        env: Union[Dict[str, str], Callable[[], Dict[str, str]]],
+        update_path: str = "prepend",
+    ) -> None:
         if callable(env):
             env_update: Dict[str, str] = env()
-            os.environ.update(env_update)
             self._analysis_desc.task_env.update(env_update)
             return
 
@@ -453,7 +466,6 @@ class BaseExecutor(ABC):
                         " Options are: prepend, append, overwrite."
                     )
                 )
-        os.environ.update(env)
         self._analysis_desc.task_env.update(env)
 
     def shell_source(self, env: str) -> None:
@@ -501,6 +513,32 @@ class BaseExecutor(ABC):
                 new_environment[key] = value
             else:
                 new_environment[f"LUTE_TENV_{key}"] = value
+                # Make sure we don't accidentally lose our current environment
+                if key in os.environ and os.getenv(key) == value:
+                    # Add identical items first
+                    new_environment[key] = value
+                elif key == "PYTHONPATH":
+                    # Handle PYTHONPATH specifically if above doesn't catch it
+                    curr: Optional[str] = os.getenv("PYTHONPATH")
+                    if curr is not None:
+                        if curr in value:
+                            new_environment[key] = value
+                        else:
+                            # Not in PYTHONPATH, make sure to add it in
+                            new_environment[key] = f"{value}:{curr}"
+
+        # Until we make LUTE installable... Need to make sure this is available
+        # for first-party Tasks, regardless of the directory they run in if using
+        # a new environment
+        old_python_path: str = new_environment.get("PYTHONPATH", "")
+        lute_path: Optional[str] = os.getenv("LUTE_PATH")
+        if lute_path is None:
+            logger.warning("LUTE_PATH not defined! Task may fail to find LUTE!")
+        else:
+            if old_python_path:
+                new_environment["PYTHONPATH"] = f"{lute_path}:{old_python_path}"
+            else:
+                new_environment["PYTHONPATH"] = lute_path
         self._analysis_desc.task_env = new_environment
 
     def _pre_task(self) -> None:
@@ -511,11 +549,17 @@ class BaseExecutor(ABC):
         """
         # This prevents the Executors in managed_tasks.py from all acquiring
         # resources like sockets.
+        # Some Communicators setup descriptions during delayed_setup
+        # so we update our analysis description now.
+        communicator_desc: List[str] = []
         for communicator in self._communicators:
             communicator.delayed_setup()
             # Not great, but experience shows we need a bit of time to setup
             # network.
             time.sleep(0.1)
+            communicator.stage_communicator()
+            communicator_desc.append(str(communicator))
+        self._analysis_desc.communicator_desc = communicator_desc
         # Propagate any env vars setup by Communicators - only update LUTE_ vars
         tmp: Dict[str, str] = {
             key: os.environ[key] for key in os.environ if "LUTE_" in key
@@ -586,13 +630,19 @@ class BaseExecutor(ABC):
         if lute_path is None:
             logger.debug("Absolute path to subprocess_task.py not found.")
             lute_path = os.path.abspath(f"{os.path.dirname(__file__)}/../..")
-            self.update_environment({"LUTE_PATH": lute_path})
+            os.environ.update({"LUTE_PATH": lute_path})
+            self._analysis_desc.task_env.update({"LUTE_PATH": lute_path})
         executable_path: str = f"{lute_path}/subprocess_task.py"
         config_path: str = self._analysis_desc.task_env["LUTE_CONFIGPATH"]
         params: str = f"-c {config_path} -t {self._analysis_desc.task_result.task_name}"
 
+        # Prevent all managed tasks from affecting each others environments
         if self._shell_source_script is not None:
             self._shell_source()
+
+        if self._delayed_update_env_args is not None:
+            self._update_environment(*self._delayed_update_env_args)
+
         cmd: str = self._submit_cmd(executable_path, params)
         proc: subprocess.Popen = self._submit_task(cmd)
         self._task_time0 = time.monotonic()
@@ -661,7 +711,12 @@ class BaseExecutor(ABC):
 
     def _store_configuration(self) -> None:
         """Store configuration and results in the LUTE database."""
-        record_analysis_db(copy.deepcopy(self._analysis_desc))
+        if self._row_ids is not None:
+            update_analysis_db(
+                cfg=copy.deepcopy(self._analysis_desc), row_ids=self._row_ids
+            )
+        else:
+            record_analysis_db(cfg=copy.deepcopy(self._analysis_desc))
 
     def _task_is_running(self, proc: subprocess.Popen) -> bool:
         """Whether a subprocess is running.
@@ -890,23 +945,42 @@ class Executor(BaseExecutor):
             assert proc is not None
             if isinstance(msg.contents, TaskParameters):
                 executor._analysis_desc.task_parameters = msg.contents
-                # Run "before" tasklets
-                if executor._tasklets["before"] is not None:
-                    executor._run_tasklets(when="before")
-                # Need to continue since Task._signal_start raises SIGSTOP
-                status: int
-                _, status = os.waitpid(proc.pid, os.WUNTRACED)
-                if os.WIFSTOPPED(status):
-                    executor._continue(proc)
-                executor._task_timeout = (
-                    executor._analysis_desc.task_parameters.lute_config.task_timeout
+            elif isinstance(msg.contents, TaskParametersDBReference):
+                work_dir: str = msg.contents.db_dir
+                row_ids: RowIds = msg.contents.row_ids
+                definition: Dict[str, Any]
+                param_values: Dict[str, Any]
+                definition, param_values = get_task_parameters_defn_and_params(
+                    db_dir=work_dir, row_ids=row_ids
                 )
-                if hasattr(
-                    executor._analysis_desc.task_parameters.Config, "set_result"
-                ):
-                    # Tasks may mark a parameter as the result
-                    # If so, setup the result now.
-                    executor._set_result_from_parameters()
+                task_parameters: Any = construct_task_parameters(
+                    schema=definition, values=param_values
+                )
+                task_parameters.lute_config.work_dir = work_dir
+                executor._analysis_desc.task_parameters = task_parameters
+                executor._row_ids = row_ids
+            else:
+                logger.critical(
+                    "Received start message, but cannot grab TaskParameters!\n"
+                    f"Message contents: {msg.contents}"
+                )
+                return None
+            assert executor._analysis_desc.task_parameters is not None
+            # Run "before" tasklets
+            if executor._tasklets["before"] is not None:
+                executor._run_tasklets(when="before")
+            # Need to continue since Task._signal_start raises SIGSTOP
+            status: int
+            _, status = os.waitpid(proc.pid, os.WUNTRACED)
+            if os.WIFSTOPPED(status):
+                executor._continue(proc)
+            executor._task_timeout = (
+                executor._analysis_desc.task_parameters.lute_config.task_timeout
+            )
+            if hasattr(executor._analysis_desc.task_parameters.Config, "set_result"):
+                # Tasks may mark a parameter as the result
+                # If so, setup the result now.
+                executor._set_result_from_parameters()
             logger.info(
                 f"Executor: {executor._analysis_desc.task_result.task_name} started"
             )
@@ -1032,6 +1106,11 @@ class Executor(BaseExecutor):
                 if msg.contents is not None:
                     if isinstance(msg.contents, str) and msg.contents != "":
                         logger.info(msg.contents)
+                    elif isinstance(msg.contents, TaskParametersDBReference):
+                        # We will log the actual reconstructed TaskParameters object
+                        # instead of the raw message. The raw message only contains
+                        # the pointers for reconstructing the object.
+                        logger.info(self._analysis_desc.task_parameters)
                     elif not isinstance(msg.contents, str):
                         logger.info(msg.contents)
                 if not communicator.has_messages:

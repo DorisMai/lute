@@ -2,16 +2,18 @@
 
 __author__ = "Gabriel Dorlhiac"
 
-import sys
-import os
-import uuid
-import getpass
-import datetime
-import logging
 import argparse
-import subprocess
+import collections
+import datetime
+import getpass
+import logging
+import os
 import shutil
+import subprocess
+import sys
 import time
+import uuid
+import yaml
 from typing import (
     Any,
     Callable,
@@ -58,6 +60,8 @@ class DagRunConf(TypedDict):
     lute_params: Dict[str, Union[str, bool]]
     slurm_params: List[str]
     workflow: Dict[str, Any]
+    run_type: Optional[str]
+    is_daq2: Optional[bool]
 
 
 class DagRunData(TypedDict):
@@ -83,6 +87,8 @@ class FlowConf(TypedDict):
     lute_params: LuteParams
     slurm_params: List[str]
     workflow: Dict[str, Any]
+    run_type: Optional[str]
+    is_daq2: Optional[bool]
 
 
 class FlowRequestDict(TypedDict):
@@ -201,6 +207,7 @@ def _run_subprocess_log(cmd: List[str], return_output: bool = False) -> Optional
 
     if return_output:
         return out
+    return None
 
 
 def grep(match_str: str, in_file: str) -> List[str]:
@@ -430,10 +437,59 @@ def run_workflow_airflow(
 
     # Experiment, run #, and ARP env variables come from ARP submission only
     # We override above or exit if we cannot, so we cast here
-    assert isinstance(os.getenv("EXPERIMENT"), str)
-    assert isinstance(os.getenv("RUN_NUM"), str)
-    assert isinstance(os.getenv("ARP_JOB_ID"), str)
-    assert isinstance(os.getenv("Authorization"), str)
+    experiment: Optional[str] = os.getenv("EXPERIMENT")
+    run_num: Optional[str] = os.getenv("RUN_NUM")
+    arp_job_id: Optional[str] = os.getenv("ARP_JOB_ID")
+    jid_authorization: Optional[str] = os.getenv("Authorization")
+    assert isinstance(experiment, str)
+    assert isinstance(run_num, str)
+    assert isinstance(arp_job_id, str)
+    assert isinstance(jid_authorization, str)
+
+    elog_auth: Dict[str, str] = {
+        "Authorization": jid_authorization,
+    }
+    base_url: str = "https://pswww.slac.stanford.edu/ws-jwt/lgbk/lgbk"
+    run_doc_endpoint: str = f"{experiment}/ws/runs/{run_num}"
+    run_doc_url: str = f"{base_url}/{run_doc_endpoint}"
+    resp = requests.get(run_doc_url, headers=elog_auth)
+
+    run_type: str
+    is_daq2: Optional[bool] = None
+    if resp.status_code != 200:
+        logger.warning(
+            "Unable to retrieve run document! No `run_type` information will be used! "
+            "No information about psana1/psana2 can be retrieved. "
+            "Workflow may be able to continue but this could point to issues with "
+            "API access that lead to problems downstream."
+        )
+        run_type = "UNKNOWN"
+    else:
+        # If API request succeeds `type` should always be defined
+        run_type = resp.json()["value"]["type"]
+
+        # Try checking for "psana1" vs "psana2" by searching for "drp" in detector names
+        param_keys: collections.abc.KeysView = resp.json()["value"]["params"].keys()
+        for key in param_keys:
+            if "/drp/" in key:
+                # Detectors in LCLS2 DAQ are sent to eLog as "DAQ Detectors/drp/<name>"
+                # In LCLS1 they are sent as "DAQ Detector/<name>"
+                is_daq2 = True
+                break
+        else:
+            is_daq2 = False
+
+    if resp.status_code != 200:
+        logger.warning(
+            "Unable to retrieve run document! No `run_type` information will be used! "
+            "Workflow may be able to continue but this could point to issues with "
+            "API access that lead to problems downstream."
+        )
+        run_type = "UNKNOWN"
+    else:
+        # If API request succeeds `type` should always be defined
+        run_type = resp.json()["value"]["type"]
+
     dag_run_data: DagRunData = {
         "dag_run_id": str(uuid.uuid4()),
         "conf": {
@@ -449,6 +505,8 @@ def run_workflow_airflow(
             "lute_params": params,
             "slurm_params": extra_args,
             "workflow": wf_defn,  # Only used for custom defined workflows.
+            "run_type": run_type,
+            "is_daq2": is_daq2,
         },
     }
 
@@ -596,10 +654,46 @@ def run_workflow_prefect(
 
     # Experiment, run #, and ARP env variables come from ARP submission only
     # We override above or exit if we cannot, so we cast here
-    assert isinstance(os.getenv("EXPERIMENT"), str)
-    assert isinstance(os.getenv("RUN_NUM"), str)
-    assert isinstance(os.getenv("ARP_JOB_ID"), str)
-    assert isinstance(os.getenv("Authorization"), str)
+    experiment: Optional[str] = os.getenv("EXPERIMENT")
+    run_num: Optional[str] = os.getenv("RUN_NUM")
+    arp_job_id: Optional[str] = os.getenv("ARP_JOB_ID")
+    jid_authorization: Optional[str] = os.getenv("Authorization")
+    assert isinstance(experiment, str)
+    assert isinstance(run_num, str)
+    assert isinstance(arp_job_id, str)
+    assert isinstance(jid_authorization, str)
+
+    elog_auth: Dict[str, str] = {
+        "Authorization": jid_authorization,
+    }
+    base_url: str = "https://pswww.slac.stanford.edu/ws-jwt/lgbk/lgbk"
+    run_doc_endpoint: str = f"{experiment}/ws/runs/{run_num}"
+    run_doc_url: str = f"{base_url}/{run_doc_endpoint}"
+    resp = requests.get(run_doc_url, headers=elog_auth)
+
+    run_type: str
+    is_daq2: Optional[bool] = None
+    if resp.status_code != 200:
+        logger.warning(
+            "Unable to retrieve run document! No `run_type` information will be used! "
+            "No information about psana1/psana2 can be retrieved. "
+            "Workflow may be able to continue but this could point to issues with "
+            "API access that lead to problems downstream."
+        )
+        run_type = "UNKNOWN"
+    else:
+        # If API request succeeds `type` should always be defined
+        run_type = resp.json()["value"]["type"]
+
+        # Try checking for "psana1" vs "psana2" by searching for "drp" in detector names
+        param_keys: collections.abc.KeysView = resp.json()["value"]["params"].keys()
+        for key in param_keys:
+            if "/drp/" in key:
+                # Detectors in LCLS2 DAQ are sent to eLog as "DAQ Detectors/drp/<name>"
+                # In LCLS1 they are sent as "DAQ Detector/<name>"
+                is_daq2 = True
+        else:
+            is_daq2 = False
 
     params: LuteParams = {
         "config_file": config_file,
@@ -619,13 +713,13 @@ def run_workflow_prefect(
         "lute_params": params,
         "slurm_params": extra_args,
         "workflow": wf_defn,
+        "run_type": run_type,
+        "is_daq2": is_daq2,
     }
 
     # Get CSRF
     ##############################################
-    resp: requests.models.Response = requests.get(
-        csrf_endpoint, auth=auth, params={"client": user}
-    )
+    resp = requests.get(csrf_endpoint, auth=auth, params={"client": user})
 
     token: str = resp.json()["token"]
     client: str = resp.json()["client"]
