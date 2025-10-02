@@ -27,4 +27,7 @@ TJump:
   # OPTIONAL: Peak fitting method: 'simple' or 'spline' or 'two_peak_fit' (default=simple). 
   # Not applicable to sd2qwp1.py script.
   # peakfit: "spline"
+
+SubmitSMD:
+  producer: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/smalldata_tools/lcls1_producers/smd_producer.py"
 ... 
