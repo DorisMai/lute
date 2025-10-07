@@ -9,8 +9,8 @@ from typing import Optional, Dict, Any
 from pydantic import Field, validator, root_validator
 
 from lute.io.models.base import ThirdPartyParameters
-from lute.io.models.validators import validate_smd_path
-
+from lute.io.db import read_latest_db_entry
+import os
 
 class TJumpParameters(ThirdPartyParameters):
     """Parameters for TJump analysis task.
@@ -39,8 +39,6 @@ class TJumpParameters(ThirdPartyParameters):
         flag_type="",
     )
 
-    # Input parameters, auto-retrieve from previous smalldata result if not supplied
-    _find_smd_path = validate_smd_path("input_h5")
     input_h5: str = Field(
         "",
         description="Path to input smalldata h5 file that contains 1D Azimuthal Integration data",
@@ -136,6 +134,25 @@ class TJumpParameters(ThirdPartyParameters):
         return output_dir
 
     # ====== BEGIN PENDING ALEX SCRIPTS ======
+    @validator("input_h5")
+    def validate_smd_path_for_run(cls, smd_path: str, values: Dict[str, Any]) -> str:
+        if smd_path == "":
+            run: int = int(values["lute_config"].run)
+            # Try from database first
+            hdf5_path: Optional[str] = read_latest_db_entry(
+                f"{values['lute_config'].work_dir}", "SubmitSMD", "result.payload", for_run=run
+            )
+            if hdf5_path is not None:
+                return hdf5_path
+            else:
+                exp: str = values["lute_config"].experiment
+                hutch: str = exp[:3]
+                hdf5_path = f"/sdf/data/lcls/ds/{hutch}/{exp}/hdf5/smalldata/{exp}_Run{run:04d}.h5"
+                if os.path.exists(hdf5_path):
+                    return hdf5_path
+                raise ValueError("No path provided for hdf5 and cannot auto-determine!")
+        return smd_path
+
     @validator("output_h5")
     def validate_output_h5(cls, output_h5: str, values: Dict[str, Any]):
         # if not supplied, create a default name based on the input h5 file
