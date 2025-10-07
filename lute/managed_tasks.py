@@ -61,7 +61,7 @@ SmallDataProducer2.add_tasklet(
     set_result=False,
     set_summary=False,
 )
-# SmallDataProducer2.update_environment(setup_smd2_env)
+SmallDataProducer2.update_environment(setup_smd2_env)
 
 SmallDataXSSAnalyzer: MPIExecutor = MPIExecutor("AnalyzeSmallDataXSS")
 """Process scattering results from a Small Data HDF5 file."""
