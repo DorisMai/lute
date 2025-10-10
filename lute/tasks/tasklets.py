@@ -423,3 +423,37 @@ def tjump_analysis_summary(output_dir: str, run: int) -> ElogSummaryPlots:
 
 
 # ====== END PENDING ALEX SCRIPTS ======
+
+# ====== BEGIN PENDING KEVIN'S SCRIPTS ======
+def classify_tjump_summary(output_dir: str, output_png: str) -> ElogSummaryPlots:
+    """Process T-Jump classification results and create summary plots for elog display.
+
+    Args:
+        output_dir (str): Path to the output directory containing the T-Jump classification results.
+        run (int): Run number of the T-Jump classification.
+
+    Returns:
+        ElogSummaryPlots: Plot object for elog display.
+    """
+    import panel as pn
+    pn.extension()
+
+    # Load the summary plot
+    summary_png_file = os.path.join(output_dir, output_png)
+    if os.path.exists(summary_png_file):
+        summary_plot = pn.pane.PNG(
+            summary_png_file, name="summary_plot", width=900
+        )
+    else:
+        logger.warning(f"Summary PNG file {summary_png_file} not found")
+        summary_plot = pn.pane.Markdown("Summary plot not found")
+
+    # ElogSummaryPlots expects the name to be consistent with a relative path within .../stats/summary/
+    if "/stats/summary/" in output_dir:
+        summary_folder_name = output_dir.split("/stats/summary/")[1]
+    else:
+        summary_folder_name = output_dir
+    logger.info(f"Summary folder name in stats/summary/: {summary_folder_name}")
+    return ElogSummaryPlots(summary_folder_name, summary_plot)
+
+# ====== END PENDING KEVIN'S SCRIPTS ======

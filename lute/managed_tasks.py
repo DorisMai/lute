@@ -164,6 +164,18 @@ TJumpAnalyzer.add_tasklet(
     set_summary=True,
 )
 
+# T-Jump Classification
+TJumpClassifier: Executor = Executor("ClassifyTJump")
+# ====== BEGIN PENDING KEVIN'S SCRIPTS ======
+TJumpClassifier.add_tasklet(
+    classify_tjump_summary,
+    ["{{ output_dir }}", "{{ output_png }}"],
+    when="after",
+    set_result=False,
+    set_summary=True,
+)
+# ====== END PENDING KEVIN'S SCRIPTS ======
+
 # XTC
 #####
 

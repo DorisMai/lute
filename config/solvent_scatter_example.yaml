@@ -28,6 +28,24 @@ TJump:
   # Not applicable to sd2qwp1.py script.
   # peakfit: "spline"
 
+ClassifyTJump:
+  # REQUIRED: Path to the classification script
+  python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/classify_tjump.py"
+
+  # OPTIONAL: Input from previous smalldata task. If not provided, LUTE validator and/or the 
+  # TJump script defaults to the following
+  # input_h5: "run{{ $RUN_NUM:04d }}_sd2qwp1.hdf5"
+
+  # OPTIONAL: Output png file name, default to the following
+  # output_png: "run{{ $RUN_NUM:04d }}_tjump_classifier.png"
+
+  # OPTIONAL: Output directory for results, default to the following
+  # output_dir: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/stats/summary/TJumpClassification/{{ $RUN_NUM:04d }}"
+
+  # OPTIONAL: Output csv file name, default to the following
+  # output_csv: "run{{ $RUN_NUM:04d }}_tjump_classifier.csv"
+
+
 SubmitSMD:
   producer: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/smalldata_tools/lcls1_producers/smd_producer.py"
 ... 
