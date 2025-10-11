@@ -12,6 +12,7 @@ from lute.io.models.base import ThirdPartyParameters
 from lute.io.db import read_latest_db_entry
 import os
 
+
 class TJumpParameters(ThirdPartyParameters):
     """Parameters for TJump analysis task.
 
@@ -140,7 +141,10 @@ class TJumpParameters(ThirdPartyParameters):
             run: int = int(values["lute_config"].run)
             # Try from database first
             hdf5_path: Optional[str] = read_latest_db_entry(
-                f"{values['lute_config'].work_dir}", "SubmitSMD", "result.payload", for_run=run
+                f"{values['lute_config'].work_dir}",
+                "SubmitSMD",
+                "result.payload",
+                for_run=run,
             )
             if hdf5_path is not None:
                 return hdf5_path
