@@ -5,7 +5,7 @@ that processes smalldata h5 files and produces new h5 files with a matplotlib
 summary figure for elog display.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Union
 from pydantic import Field, validator, root_validator
 
 from lute.io.models.base import ThirdPartyParameters
@@ -23,14 +23,14 @@ class ClassifyTJumpParameters(ThirdPartyParameters):
     class Config(ThirdPartyParameters.Config):
         """Configuration for parameters."""
 
-        long_flags_use_eq: bool = True
+        long_flags_use_eq: bool = False
         set_result: bool = True
         result_from_params: str = ""
 
     # ====== BEGIN PENDING KEVIN'S SCRIPTS ======
     executable: str = Field("python", description="Python executable.", flag_type="")
     python_script: str = Field(
-        description="Path to the TJump processing script",
+        description="Path to the TJump classifier script",
         flag_type="",
     )
 
@@ -38,61 +38,61 @@ class ClassifyTJumpParameters(ThirdPartyParameters):
         "",
         description="Path to input smalldata h5 file that contains 1D Azimuthal Integration data",
         flag_type="--",
-        rename_param="input",
+        rename_param="data-file",
     )
 
-    exp: str = Field(
-        "",
-        description="LCLS experiment identifier",
+    event_codes: Union[List[int], str] = Field(
+        [],
+        description="List of event codes to classify",
         flag_type="--",
-        rename_param="exp",
-    )
-    run: int = Field(
-        -1,
-        description="LCLS run number",
-        flag_type="--",
-        rename_param="run",
+        rename_param="event-codes",
     )
 
-    # Output parameters
     output_dir: str = Field(
         "",
         description="Path to output files, including output h5 file and png files for "
         "intermediate plots",
         flag_type="--",
-        rename_param="output",
+        rename_param="output-dir",
     )
 
     output_csv: str = Field(
         "",
         description="name of the output csv file that contains the classification results",
         flag_type="--",
-        rename_param="output_csv",
+        rename_param="csv",
     )
 
     output_png: str = Field(
         "",
         description="name of the output png file that contains the summary plot",
         flag_type="--",
-        rename_param="output_png",
+        rename_param="image",
     )
 
-    # any other parameters....
+    folds: int = Field(
+        10,
+        description="Number of crossvalidation folds",
+        flag_type="--",
+        rename_param="folds",
+    )
+    
+    num_jobs: int = Field(
+        -1,
+        description="Number of cpu cores to use. By default use all available.",
+        flag_type="--",
+        rename_param="num-jobs",
+    )
 
     # ====== END PENDING KEVIN'S SCRIPTS ======
-    @validator("exp")
-    def validate_exp(cls, exp: str, values: Dict[str, Any]):
-        """Validate that the experiment identifier is a valid LCLS experiment identifier."""
-        if exp == "":
-            exp = values["lute_config"].experiment
-        return exp
-
-    @validator("run")
-    def validate_run(cls, run: int, values: Dict[str, Any]):
-        """Validate that the run number is a valid LCLS run number."""
-        if run == -1:
-            run = int(values["lute_config"].run)
-        return run
+    @validator("event_codes")
+    def event_codes_validator(cls, event_codes: Union[str, List[int]], values: Dict[str, Any]) -> str:
+        print(f"event_codes: {event_codes}", flush=True)
+        print(f"type(event_codes): {type(event_codes)}", flush=True)
+        if isinstance(event_codes, list):
+            return " ".join(str(code) for code in event_codes)
+        else:
+            return event_codes
 
     @validator("output_dir")
     def validate_output_dir(cls, output_dir: str, values: Dict[str, Any]):
@@ -152,7 +152,7 @@ class ClassifyTJumpParameters(ThirdPartyParameters):
     def define_result(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         # Extract the values of output_dir and out_name
         output_dir: str = values["output_dir"]
-        out_name: str = values["output_h5"]
+        out_name: str = values["output_csv"]
         result: str = f"{output_dir}/{out_name}"
         cls.Config.result_from_params = result
         return values

@@ -12,6 +12,7 @@ from lute.tasks.tasklets import (
     indexamajig_summary_indexing_rate,
     setup_dimple_uglymol,
     tjump_analysis_summary,
+    classify_tjump_summary,
 )
 
 # Tests

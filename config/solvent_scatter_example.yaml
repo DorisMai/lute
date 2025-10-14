@@ -30,11 +30,14 @@ TJump:
 
 ClassifyTJump:
   # REQUIRED: Path to the classification script
-  python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/classify_tjump.py"
+  python_script: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/tjump_LUTE/event_code_classifer.py"
+
+  # OPTIONAL: list of event codes
+  event_codes: [203, 204, 205]
 
   # OPTIONAL: Input from previous smalldata task. If not provided, LUTE validator and/or the 
   # TJump script defaults to the following
-  # input_h5: "run{{ $RUN_NUM:04d }}_sd2qwp1.hdf5"
+  # input_h5: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/hdf5/smalldata/{{ $EXPERIMENT }}_Run{{ $RUN_NUM:04d }}.h5"
 
   # OPTIONAL: Output png file name, default to the following
   # output_png: "run{{ $RUN_NUM:04d }}_tjump_classifier.png"
@@ -47,5 +50,15 @@ ClassifyTJump:
 
 
 SubmitSMD:
-  producer: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/smalldata_tools/lcls1_producers/smd_producer.py"
+  # producer: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/smalldata_tools/lcls1_producers/smd_producer.py"
+  producer: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/smalldata_tools/lcls2_producers/smd_producer.py"
+  detnames: ["jungfrau"]
+  directory: "/sdf/data/lcls/ds/mfx/{{ $EXPERIMENT }}/results/doris/lute_output"
+  getAzIntParams:
+    jungfrau:
+      eBeam: 9.5
+      center: [-1107, 918]
+      dis_to_sam: 92.51
+      tx: 0
+      ty: 0
 ... 
