@@ -76,7 +76,7 @@ class ClassifyTJumpParameters(ThirdPartyParameters):
         flag_type="--",
         rename_param="folds",
     )
-    
+
     num_jobs: int = Field(
         -1,
         description="Number of cpu cores to use. By default use all available.",
@@ -86,7 +86,9 @@ class ClassifyTJumpParameters(ThirdPartyParameters):
 
     # ====== END PENDING KEVIN'S SCRIPTS ======
     @validator("event_codes")
-    def event_codes_validator(cls, event_codes: Union[str, List[int]], values: Dict[str, Any]) -> str:
+    def event_codes_validator(
+        cls, event_codes: Union[str, List[int]], values: Dict[str, Any]
+    ) -> str:
         print(f"event_codes: {event_codes}", flush=True)
         print(f"type(event_codes): {type(event_codes)}", flush=True)
         if isinstance(event_codes, list):
