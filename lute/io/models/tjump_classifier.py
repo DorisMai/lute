@@ -92,6 +92,13 @@ class ClassifyTJumpParameters(ThirdPartyParameters):
         print(f"event_codes: {event_codes}", flush=True)
         print(f"type(event_codes): {type(event_codes)}", flush=True)
         if isinstance(event_codes, list):
+            for code in event_codes:
+                if not isinstance(code, int):
+                    raise ValueError(f"Event code {code} is not an integer")
+                if code < 0:
+                    raise ValueError(f"Event code {code} is negative")
+                if code > 287:
+                    raise ValueError(f"Event code {code} is greater than 287")
             return " ".join(str(code) for code in event_codes)
         else:
             return event_codes
