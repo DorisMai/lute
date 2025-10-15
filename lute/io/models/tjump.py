@@ -5,7 +5,7 @@ that processes smalldata h5 files and produces new h5 files with a matplotlib
 summary figure for elog display.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Union
 from pydantic import Field, validator, root_validator
 
 from lute.io.models.base import ThirdPartyParameters
@@ -45,6 +45,13 @@ class TJumpParameters(ThirdPartyParameters):
         description="Path to input smalldata h5 file that contains 1D Azimuthal Integration data",
         flag_type="--",
         rename_param="input",
+    )
+
+    event_codes: Union[List[int], str] = Field(
+        [],
+        description="List of event codes to use, assumes the first code is laser_on, followed by laser_off1, laser_off2, etc.",
+        flag_type="--",
+        rename_param="event_codes",
     )
 
     exp: str = Field(
@@ -135,6 +142,24 @@ class TJumpParameters(ThirdPartyParameters):
         return output_dir
 
     # ====== BEGIN PENDING ALEX SCRIPTS ======
+    @validator("event_codes")
+    def event_codes_validator(
+        cls, event_codes: Union[str, List[int]], values: Dict[str, Any]
+    ) -> str:
+        print(f"event_codes: {event_codes}", flush=True)
+        print(f"type(event_codes): {type(event_codes)}", flush=True)
+        if isinstance(event_codes, list):
+            for code in event_codes:
+                if not isinstance(code, int):
+                    raise ValueError(f"Event code {code} is not an integer")
+                if code < 0:
+                    raise ValueError(f"Event code {code} is negative")
+                if code > 287:
+                    raise ValueError(f"Event code {code} is greater than 287")
+            return " ".join(str(code) for code in event_codes)
+        else:
+            return event_codes
+
     @validator("input_h5")
     def validate_smd_path_for_run(cls, smd_path: str, values: Dict[str, Any]) -> str:
         if smd_path == "":
