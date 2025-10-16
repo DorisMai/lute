@@ -24,7 +24,7 @@ class TJumpParameters(ThirdPartyParameters):
     class Config(ThirdPartyParameters.Config):
         """Configuration for parameters."""
 
-        long_flags_use_eq: bool = True
+        long_flags_use_eq: bool = False
         set_result: bool = True
         result_from_params: str = ""
 
