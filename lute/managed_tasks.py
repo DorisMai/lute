@@ -13,6 +13,7 @@ from lute.tasks.tasklets import (
     setup_dimple_uglymol,
     tjump_analysis_summary,
     classify_tjump_summary,
+    solvent_scatter_summary,
 )
 
 # Tests
@@ -176,6 +177,16 @@ TJumpClassifier.add_tasklet(
     set_summary=True,
 )
 # ====== END PENDING KEVIN'S SCRIPTS ======
+
+# Solvent Scattering Analysis
+SolventPlotter: Executor = Executor("PlotSolvent")
+SolventPlotter.add_tasklet(
+    solvent_scatter_summary,
+    ["{{ output_dir }}", "{{ output_png }}"],
+    when="after",
+    set_result=False,
+    set_summary=True,
+)
 
 # XTC
 #####

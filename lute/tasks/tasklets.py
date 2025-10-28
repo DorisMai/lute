@@ -458,3 +458,37 @@ def classify_tjump_summary(output_dir: str, output_png: str) -> ElogSummaryPlots
 
 
 # ====== END PENDING KEVIN'S SCRIPTS ======
+
+def solvent_scatter_summary(output_dir: str, output_png: str) -> ElogSummaryPlots:
+    """Process Solvent Scattering results and create summary plots for elog display.
+
+    Args:
+        output_dir (str): Path to the output directory containing the Solvent Scattering results.
+        run (int): Run number of the Solvent Scattering analysis.
+    """
+    import panel as pn
+
+    pn.extension()
+
+    # Load the event code traces plot
+    processed_output_png = output_png.split(".png")[0] + "_processed.png"
+    event_code_traces_tabs_list = []
+    for event_code_traces_key in [output_png, processed_output_png]:
+        png_file = os.path.join(output_dir, event_code_traces_key)
+        if os.path.exists(png_file):
+            event_code_traces_pane = pn.pane.PNG(png_file, width=1000)
+            event_code_traces_tabs_list.append((event_code_traces_key, event_code_traces_pane))
+        else:
+            logger.warning(f"PNG file {png_file} not found")
+    event_code_traces_tabs = (
+        pn.Tabs(*event_code_traces_tabs_list)
+        if event_code_traces_tabs_list
+        else pn.pane.Markdown("No event code traces plots found")
+    )
+    # ElogSummaryPlots expects the name to be consistent with a relative path within .../stats/summary/
+    if "/stats/summary/" in output_dir:
+        summary_folder_name = output_dir.split("/stats/summary/")[1]
+    else:
+        summary_folder_name = output_dir
+    logger.info(f"Summary folder name in stats/summary/: {summary_folder_name}")
+    return ElogSummaryPlots(summary_folder_name, event_code_traces_tabs)

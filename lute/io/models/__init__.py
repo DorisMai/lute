@@ -10,6 +10,7 @@ from .sfx_solve import *
 from .smd import *
 from .tjump import *
 from .tjump_classifier import *
+from .solvent_plotter import *
 from .tests import *
 from .mpi_tests import *
 from .geometry import *
