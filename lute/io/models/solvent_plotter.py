@@ -123,10 +123,13 @@ class PlotSolventParameters(ThirdPartyParameters):
     ) -> str:
         print(f"water q params: {water_q_params}", flush=True)
         print(f"type(water_q_params): {type(water_q_params)}", flush=True)
-        if water_q_params is None: return None
+        if water_q_params is None:
+            return None
         if isinstance(water_q_params, list):
             if len(water_q_params) != 3:
-                raise ValueError("Water q params must be a list of 3 floats: low_q, high_q, ratio")
+                raise ValueError(
+                    "Water q params must be a list of 3 floats: low_q, high_q, ratio"
+                )
             for param in water_q_params:
                 if not isinstance(param, float):
                     raise ValueError(f"Water q param {param} is not a float")
@@ -176,7 +179,6 @@ class PlotSolventParameters(ThirdPartyParameters):
             run: int = int(values["lute_config"].run)
             output_png = f"run{run:04d}_averages_by_event_codes.png"
         return output_png
-
 
     @root_validator(pre=False)
     def define_result(cls, values: Dict[str, Any]) -> Dict[str, Any]:

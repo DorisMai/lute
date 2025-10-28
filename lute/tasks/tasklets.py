@@ -459,6 +459,7 @@ def classify_tjump_summary(output_dir: str, output_png: str) -> ElogSummaryPlots
 
 # ====== END PENDING KEVIN'S SCRIPTS ======
 
+
 def solvent_scatter_summary(output_dir: str, output_png: str) -> ElogSummaryPlots:
     """Process Solvent Scattering results and create summary plots for elog display.
 
@@ -477,7 +478,9 @@ def solvent_scatter_summary(output_dir: str, output_png: str) -> ElogSummaryPlot
         png_file = os.path.join(output_dir, event_code_traces_key)
         if os.path.exists(png_file):
             event_code_traces_pane = pn.pane.PNG(png_file, width=1000)
-            event_code_traces_tabs_list.append((event_code_traces_key, event_code_traces_pane))
+            event_code_traces_tabs_list.append(
+                (event_code_traces_key, event_code_traces_pane)
+            )
         else:
             logger.warning(f"PNG file {png_file} not found")
     event_code_traces_tabs = (
