@@ -12,6 +12,8 @@ import os
 # import subprocess
 from typing import List, Dict, Optional
 
+import requests
+
 
 def setup_smd2_env() -> Dict[str, str]:
     """Setup environment variables smalldata_tools uses with psana2.
@@ -29,6 +31,26 @@ def setup_smd2_env() -> Dict[str, str]:
     """
     # partition: str = ...
     psana_vars: Dict[str, str] = {}
+    exp: Optional[str] = os.getenv("EXPERIMENT")
+    run: Optional[str] = os.getenv("RUN_NUM")
+    if exp and run:
+        base_url: str = "https://pswww.slac.stanford.edu/ws/lgbk/lgbk"
+        endpoint: str = f"{exp}/ws/{run}/files_for_live_mode_at_location"
+        full_url: str = f"{base_url}/{endpoint}"
+        try:
+            resp: requests.models.Response = requests.get(
+                full_url, params={"location": "S3DF"}
+            )
+            resp.raise_for_status()
+            data_dir = resp.json()["value"]["all_present"]
+
+            if data_dir:
+                psana_vars["SIT_PSDM_DATA"] = "/sdf/data/lcls/ds"
+            else:
+                psana_vars["SIT_PSDM_DATA"] = "/sdf/data/lcls/drpsrcf/ffb"
+        except Exception as e:
+            print(e)
+
     # These values are the requests - may not be defined if --nodes and
     # --ntasks-per-node were not passed.
     nodes: Optional[str] = os.getenv("SLURM_NNODES")
@@ -67,6 +89,8 @@ def setup_smd2_env() -> Dict[str, str]:
         srv_cores = default_srv_cores
 
     default_eb_cores: int = (mpi_slots - srv_cores) // 16
+    if default_eb_cores == 0:
+        default_eb_cores = 1
     eb_cores: str
     if (env_eb_cores := os.getenv("PS_EB_NODES")) is not None:
         eb_cores = env_eb_cores
