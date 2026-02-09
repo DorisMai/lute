@@ -4,6 +4,8 @@ Executor-managed Tasks with specific environment specifications are defined
 here.
 """
 
+import os
+
 from lute.execution.executor import Executor, MPIExecutor
 from lute.tasks.util.environment import setup_smd2_env
 from lute.tasks.tasklets import (
@@ -45,7 +47,7 @@ SmallDataProducer: Executor = Executor("SubmitSMD")
 """Runs the production of a LCLS1 smalldata HDF5 file."""
 SmallDataProducer.add_tasklet(
     clone_smalldata,
-    ["{{ producer }}"],
+    ["{{ producer }}", f"{os.getenv('LUTE_PATH')}/config/templates/smd.patch"],
     when="before",
     set_result=False,
     set_summary=False,
@@ -58,7 +60,7 @@ SmallDataProducer2.shell_source(
 )
 SmallDataProducer2.add_tasklet(
     clone_smalldata,
-    ["{{ producer }}"],
+    ["{{ producer }}", f"{os.getenv('LUTE_PATH')}/config/templates/smd.patch"],
     when="before",
     set_result=False,
     set_summary=False,
@@ -218,13 +220,35 @@ SolventPlotter.add_tasklet(
 
 # XTC
 #####
-
 Xtc1to2Converter: Executor = Executor("ConvertXtc1to2")
 """Converts Xtc1 files to Xtc2 to use in psana2"""
 
 # Cheetah
 #########
-
 CheetahRunner: Executor = Executor("RunCheetah")
 """Run Cheetah task."""
 CheetahRunner.shell_source("/sdf/group/lcls/ds/tools/om/setup-om.sh")
+
+# BayFAI
+#######
+BayFAIOptimizer: MPIExecutor = MPIExecutor("BayFAI")
+"""Optimize LCLS detector geometry using BayFAI: PyFAI coupled with Bayesian Optimization."""
+BayFAIOptimizer.update_environment(
+    {
+        "NUMEXPR_MAX_THREADS": "16",
+        "NUMEXPR_NUM_THREADS": "16",
+        "PYTHONPATH": "/sdf/group/lcls/ds/tools/LCLSGeom",
+    }
+)
+
+BayFAIOptimizer2: MPIExecutor = MPIExecutor("BayFAI")
+"""Optimize LCLS2 detector geometry using BayFAI: PyFAI coupled with Bayesian Optimization."""
+BayFAIOptimizer2.update_environment(
+    {
+        "NUMEXPR_MAX_THREADS": "16",
+        "NUMEXPR_NUM_THREADS": "16",
+        "PS_SRV_NODES": "0",
+        "PS_EB_NODES": "1",
+        "PYTHONPATH": "/sdf/group/lcls/ds/tools/LCLSGeom",
+    }
+)
