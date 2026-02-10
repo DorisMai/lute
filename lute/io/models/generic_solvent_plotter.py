@@ -111,7 +111,6 @@ class PlotGenericSolventParameters(ThirdPartyParameters):
         flag_type="--",
         rename_param="plot-alpha",
     )
-    
 
     # ====== Validations ======
     @validator("water_q_params")

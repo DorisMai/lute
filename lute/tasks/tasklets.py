@@ -484,7 +484,6 @@ def classify_tjump_summary(output_dir: str, output_png: str) -> ElogSummaryPlots
     return ElogSummaryPlots(summary_folder_name, summary_plot)
 
 
-
 def solvent_scatter_summary(output_dir: str, output_png: str) -> ElogSummaryPlots:
     """Process Solvent Scattering results and create summary plots for elog display.
 
