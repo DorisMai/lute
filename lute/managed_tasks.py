@@ -51,7 +51,7 @@ SmallDataProducer.add_tasklet(
 SmallDataProducer2: Executor = Executor("SubmitSMD")
 """Runs the production of a LCLS2 smalldata HDF5 file."""
 SmallDataProducer2.shell_source(
-    "/sdf/group/lcls/ds/ana/sw/conda2/manage/bin/psconda.sh"
+    "/sdf/group/lcls/ds/ana/sw/conda2/manage/bin/pscondatest.sh"
 )
 SmallDataProducer2.add_tasklet(
     clone_smalldata,
