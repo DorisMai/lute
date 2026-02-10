@@ -453,13 +453,12 @@ def tjump_analysis_summary(output_dir: str, run: int) -> ElogSummaryPlots:
 # ====== END PENDING ALEX SCRIPTS ======
 
 
-# ====== BEGIN PENDING KEVIN'S SCRIPTS ======
 def classify_tjump_summary(output_dir: str, output_png: str) -> ElogSummaryPlots:
     """Process T-Jump classification results and create summary plots for elog display.
 
     Args:
         output_dir (str): Path to the output directory containing the T-Jump classification results.
-        run (int): Run number of the T-Jump classification.
+        output_png (str): Relative path of the output png file that contains the summary plot.
 
     Returns:
         ElogSummaryPlots: Plot object for elog display.
@@ -485,15 +484,13 @@ def classify_tjump_summary(output_dir: str, output_png: str) -> ElogSummaryPlots
     return ElogSummaryPlots(summary_folder_name, summary_plot)
 
 
-# ====== END PENDING KEVIN'S SCRIPTS ======
-
 
 def solvent_scatter_summary(output_dir: str, output_png: str) -> ElogSummaryPlots:
     """Process Solvent Scattering results and create summary plots for elog display.
 
     Args:
         output_dir (str): Path to the output directory containing the Solvent Scattering results.
-        run (int): Run number of the Solvent Scattering analysis.
+        output_png (str): Relative path of the output png file that contains the summary plot.
     """
     import panel as pn
 

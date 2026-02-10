@@ -218,6 +218,15 @@ SolventPlotter.add_tasklet(
     set_summary=True,
 )
 
+GenericSolventPlotter: Executor = Executor("PlotGenericSolvent")
+GenericSolventPlotter.add_tasklet(
+    classify_tjump_summary,
+    ["{{ output_dir }}", "{{ output_png }}"],
+    when="after",
+    set_result=False,
+    set_summary=True,
+)
+
 # XTC
 #####
 Xtc1to2Converter: Executor = Executor("ConvertXtc1to2")
