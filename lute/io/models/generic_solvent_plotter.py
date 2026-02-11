@@ -63,6 +63,20 @@ class PlotGenericSolventParameters(ThirdPartyParameters):
         rename_param="image",
     )
 
+    q_low: float = Field(
+        0.8,
+        description="Low q value for normalization. Default is 0.8. Used for q vs phi heatmap as done in Sumana's analysis.",
+        flag_type="--",
+        rename_param="q-low",
+    )
+
+    q_high: float = Field(
+        3.5,
+        description="High q value for normalization. Default is 3.5. Used for q vs phi heatmap as done in Sumana's analysis.",
+        flag_type="--",
+        rename_param="q-high",
+    )
+
     medfilt_window: int = Field(
         13,
         description="Window size for median filter, must be odd",
